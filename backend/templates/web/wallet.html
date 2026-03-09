@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Wallet — PocketSense{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">👛 Wallet</h1>
+</div>
+
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <div class="wallet-display">
+        <div style="font-size: 5rem;">👛</div>
+        <div class="wallet-label">Your Balance</div>
+        <div class="wallet-amount">₹{{ wallet_balance|floatformat:0 }}</div>
+        <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.9rem;">
+            Total income minus total expenses
+        </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+        <div class="stat-card income" style="text-align: center;">
+            <div class="stat-label">Total Income</div>
+            <div class="stat-value positive" style="font-size: 1.3rem;">₹{{ total_income|floatformat:0 }}</div>
+        </div>
+        <div class="stat-card spent" style="text-align: center;">
+            <div class="stat-label">Total Spent</div>
+            <div class="stat-value negative" style="font-size: 1.3rem;">₹{{ total_expenses|floatformat:0 }}</div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: center;">
+        <a href="{% url 'web:add_expense' %}" class="btn btn-danger">➖ Expense</a>
+        <a href="{% url 'web:add_income' %}" class="btn btn-primary">➕ Income</a>
+    </div>
+</div>
+
+{% if income_sources %}
+<div class="card" style="max-width: 500px; margin: 2rem auto 0;">
+    <div class="card-header">
+        <h2 class="card-title">💵 Income Sources</h2>
+    </div>
+    {% for src in income_sources %}
+    <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+        <div>
+            <strong>{{ src.name }}</strong>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">{{ src.get_frequency_display }}</div>
+        </div>
+        <div class="amount-income">₹{{ src.amount|floatformat:0 }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

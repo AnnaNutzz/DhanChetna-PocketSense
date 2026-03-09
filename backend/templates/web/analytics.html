@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — PocketSense{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">📈 Analytics</h1>
+</div>
+
+<div class="charts-row">
+    <!-- Category Split (Doughnut) -->
+    <div class="chart-container">
+        <h3 class="chart-title">Category Breakdown — This Month</h3>
+        <canvas id="categoryChart"></canvas>
+    </div>
+
+    <!-- Weekly Trend (Line) -->
+    <div class="chart-container">
+        <h3 class="chart-title">Daily Spending — Last 7 Days</h3>
+        <canvas id="weeklyChart"></canvas>
+    </div>
+</div>
+
+<!-- Monthly Table -->
+<div class="card analytics-summary">
+    <div class="card-header">
+        <h2 class="card-title">📊 Monthly Summary</h2>
+    </div>
+    <div class="analytics-stats">
+        <div class="stat-card spent analytics-stat-item">
+            <div class="stat-label">Total Spent</div>
+            <div class="stat-value negative analytics-stat-val">₹{{ month_expenses|floatformat:0 }}</div>
+        </div>
+        <div class="stat-card income analytics-stat-item">
+            <div class="stat-label">Total Income</div>
+            <div class="stat-value positive analytics-stat-val">₹{{ month_income|floatformat:0 }}</div>
+        </div>
+        <div class="stat-card balance analytics-stat-item">
+            <div class="stat-label">Net</div>
+            <div class="stat-value analytics-stat-val {% if month_net >= 0 %}positive{% else %}negative{% endif %}">
+                ₹{{ month_net|floatformat:0 }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JSON data for charts (hidden, read by JS) -->
+<script id="category-json" type="application/json">{{ category_data|safe }}</script>
+<script id="weekly-json" type="application/json">{{ weekly_data|safe }}</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Category Doughnut
+    var catData = JSON.parse(document.getElementById('category-json').textContent);
+    if (catData.length > 0) {
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catData.map(function(d) { return d.category; }),
+                datasets: [{
+                    data: catData.map(function(d) { return d.total; }),
+                    backgroundColor: catData.map(function(d) { return d.color; }),
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#c4c4e0', padding: 15, font: { family: 'Outfit' } } }
+                }
+            }
+        });
+    }
+
+    // Weekly Trend
+    var weekData = JSON.parse(document.getElementById('weekly-json').textContent);
+    if (weekData.length > 0) {
+        new Chart(document.getElementById('weeklyChart'), {
+            type: 'line',
+            data: {
+                labels: weekData.map(function(d) { return d.date; }),
+                datasets: [{
+                    label: 'Daily Spending',
+                    data: weekData.map(function(d) { return d.total; }),
+                    borderColor: '#6C5CE7',
+                    backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#6C5CE7',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(200,200,255,0.1)' },
+                        ticks: { color: '#8888aa', font: { family: 'Outfit' } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#8888aa', font: { family: 'Outfit' } }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

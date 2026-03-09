@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Savings Jar — PocketSense{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🏺 Savings Jar</h1>
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('create-modal').classList.add('active')">
+        + New Goal
+    </button>
+</div>
+
+{% if goals %}
+    {% for goal in goals %}
+    <div class="card savings-card">
+        <div class="savings-card-layout">
+            <div class="savings-card-icon-col">
+                <div class="savings-big-icon">🏺</div>
+                <div class="savings-fill-label">{{ goal.fill_state|title }}</div>
+            </div>
+            <div class="savings-card-detail">
+                <h3 class="savings-card-name">{{ goal.name }}</h3>
+                <div class="savings-amount savings-amount-sm">
+                    ₹{{ goal.current_amount|floatformat:0 }}
+                    <span class="savings-target">/ ₹{{ goal.target_amount|floatformat:0 }}</span>
+                </div>
+                <div class="budget-bar budget-bar-spaced">
+                    <div class="budget-fill ok" data-width="{{ goal.fill_percentage }}"></div>
+                </div>
+                <div class="savings-status-row">
+                    <span class="savings-pct">{{ goal.fill_percentage }}%</span>
+                    {% if goal.target_date %}
+                        <span class="savings-pct">Target: {{ goal.target_date|date:"d M Y" }}</span>
+                    {% endif %}
+                </div>
+
+                {% if goal.status == 'active' %}
+                <form method="post" action="{% url 'web:savings_deposit' goal.id %}" class="savings-deposit-form">
+                    {% csrf_token %}
+                    <input type="number" name="amount" class="form-control savings-deposit-input" placeholder="Amount to save" step="0.01" min="0.01" required>
+                    <button type="submit" class="btn btn-primary btn-sm">💰 Deposit</button>
+                </form>
+                {% elif goal.status == 'completed' %}
+                <div class="savings-completed">🎉 Goal completed!</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-icon">🏺</div>
+            <h3>No savings goals yet</h3>
+            <p>Create a goal and watch your jar fill up!</p>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="create-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>🏺 New Savings Goal</h2>
+            <button class="modal-close" onclick="document.getElementById('create-modal').classList.remove('active')">&times;</button>
+        </div>
+        <form method="post" action="{% url 'web:savings_create' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Goal Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. New Headphones" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Amount (₹)</label>
+                <input type="number" name="target_amount" class="form-control" placeholder="5000" step="0.01" min="1" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Date (optional)</label>
+                <input type="date" name="target_date" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Create Goal</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set dynamic widths from data attributes
+    document.querySelectorAll('.budget-fill[data-width]').forEach(function(el) {
+        el.style.width = el.getAttribute('data-width') + '%';
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — PocketSense{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">⚙️ Settings</h1>
+</div>
+
+<div style="max-width: 600px;">
+    <!-- Profile -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <h2 class="card-title" style="margin-bottom: 1rem;">👤 Profile</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="profile">
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" value="{{ user.email }}" disabled>
+            </div>
+
+            <h3 style="margin: 1.5rem 0 1rem; font-size: 1rem; color: var(--text-muted);">Financial Profile</h3>
+
+            <div class="form-group">
+                <label class="form-label">I am a...</label>
+                <select name="age_group" class="form-control">
+                    <option value="student" {% if profile.age_group == 'student' %}selected{% endif %}>Student</option>
+                    <option value="working" {% if profile.age_group == 'working' %}selected{% endif %}>Working Adult</option>
+                    <option value="freelancer" {% if profile.age_group == 'freelancer' %}selected{% endif %}>Freelancer</option>
+                    <option value="retired" {% if profile.age_group == 'retired' %}selected{% endif %}>Retired</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Income Source</label>
+                <select name="income_type" class="form-control">
+                    <option value="pocket_money" {% if profile.income_type == 'pocket_money' %}selected{% endif %}>Pocket Money</option>
+                    <option value="salary" {% if profile.income_type == 'salary' %}selected{% endif %}>Salary</option>
+                    <option value="stipend" {% if profile.income_type == 'stipend' %}selected{% endif %}>Stipend</option>
+                    <option value="freelance" {% if profile.income_type == 'freelance' %}selected{% endif %}>Freelance</option>
+                    <option value="none" {% if profile.income_type == 'none' %}selected{% endif %}>No Income</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Living Situation</label>
+                <select name="living_situation" class="form-control">
+                    <option value="hostel" {% if profile.living_situation == 'hostel' %}selected{% endif %}>Hostel</option>
+                    <option value="home" {% if profile.living_situation == 'home' %}selected{% endif %}>Living at Home</option>
+                    <option value="rented" {% if profile.living_situation == 'rented' %}selected{% endif %}>Rented Place</option>
+                    <option value="pg" {% if profile.living_situation == 'pg' %}selected{% endif %}>Paying Guest</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="food_provided" {% if profile.food_provided %}checked{% endif %}>
+                    Food is provided where I live
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+
+    <!-- Data -->
+    <div class="card">
+        <h2 class="card-title" style="margin-bottom: 1rem;">📦 Data</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">Export your data for safekeeping.</p>
+        <a href="{% url 'web:export_csv' %}" class="btn btn-outline btn-sm">📥 Export Transactions (CSV)</a>
+    </div>
+</div>
+{% endblock %}

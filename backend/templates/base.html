@@ -1,0 +1,173 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}PocketSense{% endblock %}</title>
+    <meta
+      name="description"
+      content="Smart expense tracker for students — track, budget, save."
+    />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <button
+      class="mobile-menu-btn"
+      onclick="document.querySelector('.sidebar').classList.toggle('open')"
+    >
+      ☰
+    </button>
+
+    <div class="app-container">
+      {% block sidebar %}
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <span class="emoji">💰</span> PocketSense
+        </div>
+
+        <ul class="sidebar-nav">
+          <li>
+            <a
+              href="{% url 'web:dashboard' %}"
+              class="{% if active_page == 'dashboard' %}active{% endif %}"
+            >
+              📊 Dashboard
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:transactions' %}"
+              class="{% if active_page == 'transactions' %}active{% endif %}"
+            >
+              💸 Transactions
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:add_expense' %}"
+              class="{% if active_page == 'add_expense' %}active{% endif %}"
+            >
+              ➖ Add Expense
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:add_income' %}"
+              class="{% if active_page == 'add_income' %}active{% endif %}"
+            >
+              ➕ Add Income
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:wallet' %}"
+              class="{% if active_page == 'wallet' %}active{% endif %}"
+            >
+              👛 Wallet
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:savings' %}"
+              class="{% if active_page == 'savings' %}active{% endif %}"
+            >
+              🏺 Savings Jar
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:budgets' %}"
+              class="{% if active_page == 'budgets' %}active{% endif %}"
+            >
+              🎯 Budgets
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:analytics' %}"
+              class="{% if active_page == 'analytics' %}active{% endif %}"
+            >
+              📈 Analytics
+            </a>
+          </li>
+          <li>
+            <a
+              href="{% url 'web:settings' %}"
+              class="{% if active_page == 'settings' %}active{% endif %}"
+            >
+              ⚙️ Settings
+            </a>
+          </li>
+        </ul>
+
+        <div class="sidebar-footer">
+          <div class="theme-toggle" onclick="toggleTheme()">
+            <div class="theme-toggle-track">
+              <div class="theme-toggle-thumb">🌙</div>
+            </div>
+            <span style="font-size: 0.85rem; color: var(--text-muted)"
+              >Theme</span
+            >
+          </div>
+          <a
+            href="{% url 'web:logout' %}"
+            style="
+              display: block;
+              margin-top: 1rem;
+              color: var(--text-muted);
+              font-size: 0.85rem;
+            "
+          >
+            🚪 Logout ({{ user.first_name|default:user.username }})
+          </a>
+        </div>
+      </aside>
+      {% endblock %}
+
+      <main class="main-content">
+        {% if messages %} {% for message in messages %}
+        <div
+          class="toast toast-{{ message.tags }}"
+          id="toast-{{ forloop.counter }}"
+        >
+          {{ message }}
+        </div>
+        {% endfor %} {% endif %} {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <script>
+      // Theme toggle
+      function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", next);
+        localStorage.setItem("ps-theme", next);
+
+        const thumb = document.querySelector(".theme-toggle-thumb");
+        thumb.textContent = next === "dark" ? "🌙" : "☀️";
+      }
+
+      // Load saved theme
+      (function () {
+        const saved = localStorage.getItem("ps-theme");
+        if (saved) {
+          document.documentElement.setAttribute("data-theme", saved);
+          const thumb = document.querySelector(".theme-toggle-thumb");
+          if (thumb) thumb.textContent = saved === "dark" ? "🌙" : "☀️";
+        }
+      })();
+
+      // Auto-dismiss toasts
+      document.querySelectorAll(".toast").forEach((t) => {
+        setTimeout(() => t.remove(), 4500);
+      });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>
