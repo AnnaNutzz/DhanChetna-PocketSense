@@ -65,7 +65,7 @@ PocketSense/
 ### 1. Clone & Set Up
 
 ```bash
-git clone https://github.com/AnnaNutzz/50-Days-50-Projects.git
+git clone https://github.com/AnnaNutzz/DHanChetna-PocketSense.git
 cd PocketSense
 
 # Create virtual environment
@@ -79,6 +79,8 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r backend/requirements.txt
+# Linux
+python3 -m pip install -r backend/requirements.txt
 ```
 
 ### 2. Initialize the Database
