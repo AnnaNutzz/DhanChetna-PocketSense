@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+
+# Django
+*.sqlite3
+backend/db.sqlite3
+backend/static/
+media/
+
+# Environment
+.env
+backend/.env
+firebase-credentials.json
+backend/firebase-credentials.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ML models (large files)
+ml_models/*.joblib
+ml_models/*.pkl
+
+# Kivy
+.buildozer/
+bin/

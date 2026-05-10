@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — PocketSense{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="greeting">
+            Good {{ time_of_day }}, <span class="greeting-name">{{ user.first_name|default:user.username }}</span> 👋
+        </div>
+        <p class="page-subtitle">Here's your financial snapshot</p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats-grid">
+    <div class="stat-card spent">
+        <div class="stat-label">Spent Today</div>
+        <div class="stat-value negative">₹{{ today_spent|floatformat:0 }}</div>
+        <div class="stat-sub">{{ today_count }} transaction{{ today_count|pluralize }}</div>
+    </div>
+    <div class="stat-card income">
+        <div class="stat-label">This Month Income</div>
+        <div class="stat-value positive">₹{{ month_income|floatformat:0 }}</div>
+    </div>
+    <div class="stat-card spent">
+        <div class="stat-label">This Month Expenses</div>
+        <div class="stat-value negative">₹{{ month_expenses|floatformat:0 }}</div>
+        <div class="stat-sub">Net: ₹{{ month_net|floatformat:0 }}</div>
+    </div>
+    <div class="stat-card balance">
+        <div class="stat-label">Wallet Balance</div>
+        <div class="stat-value accent-color">₹{{ wallet_balance|floatformat:0 }}</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <a href="{% url 'web:add_expense' %}" class="quick-action-btn">
+        <span class="quick-action-icon">➖</span>
+        Add Expense
+    </a>
+    <a href="{% url 'web:add_income' %}" class="quick-action-btn">
+        <span class="quick-action-icon">➕</span>
+        Add Income
+    </a>
+    <a href="{% url 'web:savings' %}" class="quick-action-btn">
+        <span class="quick-action-icon">🏺</span>
+        Savings Jar
+    </a>
+    <a href="{% url 'web:analytics' %}" class="quick-action-btn">
+        <span class="quick-action-icon">📈</span>
+        Analytics
+    </a>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Budget Status -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">🎯 Budget Status</h2>
+            <a href="{% url 'web:budgets' %}" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        {% if budget_status %}
+            {% for b in budget_status %}
+            <div class="budget-item">
+                <div class="budget-item-header">
+                    <span>{{ b.category }}</span>
+                    <span class="text-muted">₹{{ b.spent|floatformat:0 }} / ₹{{ b.limit|floatformat:0 }}</span>
+                </div>
+                <div class="budget-bar">
+                    <div class="budget-fill {{ b.status }}" data-width="{{ b.percentage }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted text-sm">No budgets set. <a href="{% url 'web:budgets' %}">Create one</a></p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">💸 Recent Transactions</h2>
+            <a href="{% url 'web:transactions' %}" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        {% if recent_transactions %}
+            {% for txn in recent_transactions %}
+            <div class="txn-row">
+                <div>
+                    <div class="txn-title">{{ txn.title }}</div>
+                    <div class="txn-meta">
+                        {{ txn.category.name|default:"Uncategorized" }} · {{ txn.transaction_date|date:"d M" }}
+                    </div>
+                </div>
+                <div class="{% if txn.type == 'expense' %}amount-expense{% else %}amount-income{% endif %}">
+                    {% if txn.type == 'expense' %}-{% else %}+{% endif %}₹{{ txn.amount|floatformat:0 }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted text-sm">No transactions yet. Start tracking!</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if savings_jar %}
+<!-- Savings Jar Preview -->
+<div class="card savings-preview">
+    <div class="card-header">
+        <h2 class="card-title">🏺 {{ savings_jar.name }}</h2>
+    </div>
+    <div class="savings-preview-body">
+        <div class="savings-big-icon">🏺</div>
+        <div>
+            <div class="savings-amount">
+                ₹{{ savings_jar.current_amount|floatformat:0 }}
+                <span class="savings-target">/ ₹{{ savings_jar.target_amount|floatformat:0 }}</span>
+            </div>
+            <div class="budget-bar savings-bar">
+                <div class="budget-fill ok" data-width="{{ savings_jar.fill_percentage }}"></div>
+            </div>
+            <div class="savings-pct">{{ savings_jar.fill_percentage }}% complete</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set dynamic widths from data attributes
+    document.querySelectorAll('.budget-fill[data-width]').forEach(function(el) {
+        el.style.width = el.getAttribute('data-width') + '%';
+    });
+</script>
+{% endblock %}

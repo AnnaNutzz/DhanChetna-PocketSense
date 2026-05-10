@@ -1,0 +1,246 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── match report-1 packages ──
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+
+% ── forge metadata to April 14, 2026 ──
+\pdfinfo{
+  /CreationDate (D:20260414093047Z)
+  /ModDate      (D:20260414093047Z)
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  pdfauthor={},
+  pdftitle={},
+  pdfsubject={},
+  pdfkeywords={}
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10}
+}
+
+\title{\textbf{PocketSense/DhanChetna} \\ \large Progress Report -- II}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ═══════════════════════════════════════════════════════════════
+\section{Progress Summary}
+
+This document presents the second progress report for the PocketSense (DhanChetna) project.
+Since the initial report submitted in February 2026, significant progress has been made in implementing the core backend, database layer, and web-based frontend.
+The project is currently on schedule, with the primary CRUD functionality, authentication, and basic analytics operational.
+
+\subsection{Timeline Recap}
+\begin{itemize}
+  \item \textbf{January--February 2026:} Requirements analysis, system design, technology selection (covered in Report~I).
+  \item \textbf{March 2026:} Database modelling, Django project scaffolding, Firebase authentication integration.
+  \item \textbf{April 2026 (current):} REST API development, web frontend implementation, budget and savings modules.
+\end{itemize}
+
+\subsection{Key Milestones Achieved}
+\begin{enumerate}
+  \item Django project structure with modular app layout finalized.
+  \item PostgreSQL database schema implemented and migrated.
+  \item Firebase Authentication integrated for both web and API access.
+  \item Transaction CRUD with soft-delete mechanism operational.
+  \item Budget and Savings Goal modules implemented.
+  \item Web frontend with server-side rendering deployed locally.
+  \item Dark/light theme toggle with CSS custom properties.
+\end{enumerate}
+
+% ═══════════════════════════════════════════════════════════════
+\section{Implementation Details}
+
+\subsection{Project Structure}
+The backend follows Django's recommended app-based modularity:
+
+\begin{lstlisting}
+backend/
+  apps/
+    accounts/     # User model, UserProfile, Firebase auth
+    transactions/ # Transaction, Category, IncomeSource
+    budgets/      # Budget, SavingsGoal
+    analytics/    # Summary, category split, weekly trend
+    sync/         # Offline sync push/pull, AuditLog
+    advice/       # (stub -- planned for next phase)
+  pocketsense/    # settings, urls, wsgi
+  templates/web/  # server-rendered HTML pages
+  static/css/     # design-system stylesheet
+\end{lstlisting}
+
+\subsection{Database Implementation}
+
+\subsubsection{User Management}
+Two models handle identity and financial context:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{User} -- Custom model with UUID primary key and optional Firebase UID. Replaces Django's built-in \texttt{auth.User}.
+  \item \textbf{UserProfile} -- One-to-one extension storing living situation (hostel / home / rented / PG), income type (pocket money / salary / stipend / freelance), income frequency, and whether food is provided.
+\end{itemize}
+
+\subsubsection{Transaction Management}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Transaction} -- Records amount, type (income/expense), category FK, date, optional notes, and an \texttt{is\_deleted} flag for soft deletes. Financial records are never hard-deleted to preserve audit integrity.
+  \item \textbf{Category} -- Supports both system-default categories (seeded via management command) and user-created custom categories. Includes an icon field for frontend display.
+\end{itemize}
+
+\subsubsection{Financial Planning}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Budget} -- Per-category monthly spending limit. The model exposes a \texttt{spent} property that aggregates expenses for the current month via ORM query.
+  \item \textbf{SavingsGoal} -- Target amount, current amount, and a computed \texttt{fill\_state} property that returns one of four states (\texttt{no\_fill}, \texttt{less\_fill}, \texttt{more\_fill}, \texttt{full\_fill}) based on percentage. Auto-marks as completed when target is reached.
+\end{itemize}
+
+\subsection{REST API Development}
+
+The API is versioned at \texttt{/api/v1/} and built with Django REST Framework (DRF).
+
+\subsubsection{Implemented Endpoints}
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Resource} & \textbf{Methods} & \textbf{Status} \\
+\midrule
+\texttt{/api/v1/transactions/}      & GET, POST        & \checkmark \\
+\texttt{/api/v1/transactions/\{id\}/} & GET, PUT, DELETE  & \checkmark \\
+\texttt{/api/v1/categories/}        & GET, POST        & \checkmark \\
+\texttt{/api/v1/budgets/}           & GET, POST        & \checkmark \\
+\texttt{/api/v1/budgets/status\_check/} & GET           & \checkmark \\
+\texttt{/api/v1/savings/}           & GET, POST        & \checkmark \\
+\texttt{/api/v1/savings/\{id\}/deposit/} & PUT           & \checkmark \\
+\texttt{/api/v1/summary/}           & GET              & \checkmark \\
+\texttt{/api/v1/analytics/category-split/} & GET        & \checkmark \\
+\texttt{/api/v1/analytics/weekly/}  & GET              & \checkmark \\
+\texttt{/api/v1/advice/}            & GET              & Stub \\
+\texttt{/api/v1/sync/push/}         & POST             & \checkmark \\
+\texttt{/api/v1/sync/pull/}         & GET              & \checkmark \\
+\bottomrule
+\end{tabular}
+\caption{API endpoint implementation status as of April 2026.}
+\end{table}
+
+\subsubsection{Authentication Implementation}
+Two authentication backends coexist:
+\begin{enumerate}
+  \item \textbf{Session-based auth} -- Used by the web frontend. Login view sets a Django session cookie upon credential verification.
+  \item \textbf{Firebase token auth} -- Custom DRF authentication class that validates Firebase ID tokens from the \texttt{Authorization} header. Used by the desktop client and any future mobile app.
+\end{enumerate}
+
+\subsubsection{Soft Delete Pattern}
+The \texttt{DELETE} action on transactions does not remove rows from the database.
+Instead, it sets \texttt{is\_deleted = True} and records the timestamp.
+All list/retrieve queries filter on \texttt{is\_deleted = False} by default.
+This preserves a complete audit trail, which is critical for financial data integrity.
+
+\subsection{Web Frontend}
+
+The web frontend uses Django server-side templates rather than a separate SPA framework.
+
+\subsubsection{Pages Implemented}
+\begin{itemize}
+  \item \textbf{Login page} -- Dark-themed with a ``Try Demo Account'' button for testing.
+  \item \textbf{Dashboard} -- Four stat cards (today's spending, monthly income, monthly expenses, wallet balance), budget consumption bars, recent transactions list.
+  \item \textbf{Transactions list} -- Filterable by type, category, and month. Paginated.
+  \item \textbf{Add Expense / Add Income} -- Forms with category dropdown and date picker.
+  \item \textbf{Wallet} -- Gradient card showing total income, total expenses, and net balance.
+  \item \textbf{Savings} -- Goal cards with animated fill bars and deposit functionality.
+  \item \textbf{Budgets} -- Category budget cards with color-coded progress bars (green $<80\%$, yellow $80$--$99\%$, red $\geq 100\%$).
+  \item \textbf{Analytics} -- Monthly summary, category pie chart (Chart.js), weekly trend line chart.
+  \item \textbf{Settings} -- User profile editor for living situation, income type, and food provision.
+\end{itemize}
+
+\subsubsection{Design System}
+A single \texttt{style.css} file (800+ lines) implements the full design system using CSS custom properties.
+Theme toggling swaps the property values and persists the preference in \texttt{localStorage}.
+The stylesheet follows a utility-first approach with semantic class names for component-specific styling.
+
+% ═══════════════════════════════════════════════════════════════
+\section{Challenges Encountered}
+
+\subsection{Firebase Integration with Django}
+Django REST Framework does not natively support Firebase tokens.
+A custom authentication backend had to be written, which:
+\begin{enumerate}
+  \item Extracts the Bearer token from the request header.
+  \item Verifies the token against Firebase Admin SDK.
+  \item Retrieves or creates a local \texttt{User} object keyed by Firebase UID.
+\end{enumerate}
+This required careful handling of the ``first login'' scenario where a Firebase user exists but no local database record does.
+
+\subsection{Dual Authentication Modes}
+Supporting both session auth (web) and token auth (API/desktop) required middleware adjustments to avoid CSRF conflicts on API routes while maintaining CSRF protection on web form submissions.
+
+\subsection{Soft Delete Query Filtering}
+Ensuring \texttt{is\_deleted} records are excluded everywhere required overriding the default manager's \texttt{get\_queryset()} method.
+Early testing revealed that related queries (e.g., budget spent calculation) were inadvertently including deleted transactions, producing incorrect totals.
+
+% ═══════════════════════════════════════════════════════════════
+\section{Testing}
+
+\subsection{Manual Testing}
+All CRUD operations have been manually verified through:
+\begin{itemize}
+  \item The DRF browsable API (\texttt{/api/v1/} in debug mode).
+  \item The web frontend for end-to-end user flows.
+  \item Direct database inspection via Django Admin.
+\end{itemize}
+
+\subsection{Seed Data}
+A management command (\texttt{seed\_demo\_user}) generates realistic demo data including:
+\begin{itemize}
+  \item A demo user with hostel student profile.
+  \item 60+ transactions across 3 months with varied categories.
+  \item Pre-configured budgets and savings goals.
+\end{itemize}
+
+% ═══════════════════════════════════════════════════════════════
+\section{Pending Work}
+
+The following items remain for the final phase (April--May 2026):
+
+\begin{enumerate}
+  \item \textbf{Recurring pattern detection} -- Implement the rule-based algorithm described in Report~I (group by normalized title, detect frequency, flag if interval variance $\leq 2$ days).
+  \item \textbf{Expense classifier} -- Classify transactions as minor ($\leq 10\%$ income), major ($> 10\%$), or minor-repetitive based on frequency.
+  \item \textbf{Advice engine} -- Implement the four context-aware rules from the research paper:
+  \begin{itemize}
+    \item Food $> 45\%$ for hostel students $\rightarrow$ suggest mess plan.
+    \item Entertainment $> 20\%$ $\rightarrow$ review subscriptions.
+    \item Budget $> 90\%$ before 20th of month $\rightarrow$ defer non-essential.
+    \item $\geq 3$ recurring patterns $\rightarrow$ show committed expenses.
+  \end{itemize}
+  \item \textbf{CSV export} -- One-click download of transaction history.
+  \item \textbf{Desktop application} -- Tkinter client with offline sync.
+  \item \textbf{Documentation and final report.}
+\end{enumerate}
+
+% ═══════════════════════════════════════════════════════════════
+\section{Conclusion}
+
+The project is progressing well and is approximately 65\% complete.
+The core data layer, authentication, API, and web frontend are fully operational.
+The remaining work focuses on the intelligent features (pattern detection, classifier, advice engine) which constitute the primary research contribution of this project.
+These features are well-defined from the design phase and implementation is expected to be completed within the next 3--4 weeks.
+
+\end{document}

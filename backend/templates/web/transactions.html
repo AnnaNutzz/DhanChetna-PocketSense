@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions — PocketSense{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">💸 Transactions</h1>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="{% url 'web:add_expense' %}" class="btn btn-danger btn-sm">➖ Expense</a>
+        <a href="{% url 'web:add_income' %}" class="btn btn-primary btn-sm">➕ Income</a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <form method="get" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+            <label class="form-label">Type</label>
+            <select name="type" class="form-control">
+                <option value="">All Types</option>
+                <option value="expense" {% if filter_type == 'expense' %}selected{% endif %}>Expenses</option>
+                <option value="income" {% if filter_type == 'income' %}selected{% endif %}>Income</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if filter_category == cat.id|slugify %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+            <label class="form-label">Month</label>
+            <input type="month" name="month" value="{{ filter_month }}" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    </form>
+</div>
+
+<!-- Transaction List -->
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for txn in transactions %}
+            <tr>
+                <td>{{ txn.transaction_date|date:"d M Y" }}</td>
+                <td>
+                    <strong>{{ txn.title }}</strong>
+                    {% if txn.description %}<br><small style="color: var(--text-muted);">{{ txn.description|truncatewords:8 }}</small>{% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-{{ txn.category.name|lower|default:'misc' }}">
+                        {{ txn.category.name|default:"—" }}
+                    </span>
+                </td>
+                <td class="{% if txn.type == 'expense' %}amount-expense{% else %}amount-income{% endif %}">
+                    {% if txn.type == 'expense' %}-{% else %}+{% endif %}₹{{ txn.amount|floatformat:2 }}
+                </td>
+                <td>
+                    <form method="post" action="{% url 'web:delete_transaction' txn.id %}" style="display: inline;"
+                          onsubmit="return confirm('Delete this transaction?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🗑️</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="empty-state">
+                    <p style="font-size: 2rem;">📭</p>
+                    <p>No transactions found.</p>
+                    <a href="{% url 'web:add_expense' %}" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">Add your first expense</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if transactions.has_other_pages %}
+<div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem;">
+    {% if transactions.has_previous %}
+        <a href="?page={{ transactions.previous_page_number }}" class="btn btn-outline btn-sm">← Prev</a>
+    {% endif %}
+    <span style="padding: 0.4rem 1rem; color: var(--text-muted); font-size: 0.85rem;">
+        Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
+    </span>
+    {% if transactions.has_next %}
+        <a href="?page={{ transactions.next_page_number }}" class="btn btn-outline btn-sm">Next →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Advice — PocketSense{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">🧠 Smart Advice</h1>
+        <p class="page-subtitle">Context-aware insights based on your spending patterns</p>
+    </div>
+</div>
+
+{% if profile %}
+<div class="card" style="margin-bottom: 1.25rem;">
+    <div class="card-header">
+        <h2 class="card-title">Your Profile Context</h2>
+    </div>
+    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.85rem;">
+        <span>👤 {{ profile.get_age_group_display }}</span>
+        <span>💰 {{ profile.get_income_type_display }}</span>
+        <span>🏠 {{ profile.get_living_situation_display }}</span>
+        {% if profile.food_provided %}<span>🍽️ Meals included</span>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% for item in advice_list %}
+<div class="advice-card {{ item.type }}">
+    <div class="advice-type">
+        {% if item.type == 'awareness' %}👁️ Awareness
+        {% elif item.type == 'optimization' %}⚡ Optimization
+        {% elif item.type == 'prediction' %}🔮 Prediction
+        {% else %}💡 Tip{% endif %}
+    </div>
+    <div class="advice-message">{{ item.message }}</div>
+    <div class="advice-confidence">
+        Confidence: {{ item.confidence }} · Based on {{ item.data_points }} data point{{ item.data_points|pluralize }}
+    </div>
+</div>
+{% empty %}
+<div class="empty-state">
+    <div class="empty-state-icon">🧠</div>
+    <div class="empty-state-text">Keep tracking expenses — advice will appear as we learn your patterns!</div>
+</div>
+{% endfor %}
+{% endblock %}
